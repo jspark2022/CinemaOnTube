@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>영화 정보</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>영화 정보 및 리뷰 요약</h1>
+
+        {% if movie_info %}
+        <div class="movie-info">
+            <h2>영화 정보</h2>
+            <p><strong>제목:</strong> {{ movie_info["제목"] }}</p>
+            <p><strong>개요:</strong> {{ movie_info["개요"] }}</p>
+            <p><strong>개봉일:</strong> {{ movie_info["개봉일"] }}</p>
+            <p><strong>평점:</strong> {{ movie_info["평점"] }}</p>
+            <img src="{{ movie_info['포스터 URL'] }}" alt="Movie Poster">
+        </div>
+        {% endif %}
+
+        {% if review_summary %}
+        <div class="review-summary">
+            <h2>리뷰 요약</h2>
+            <p>{{ review_summary }}</p>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <p class="error">{{ error }}</p>
+        {% endif %}
+
+        <a href="/" class="btn">다시 검색하기</a>
+    </div>
+</body>
+</html>
