@@ -6,7 +6,7 @@ openai==0.28.0
 python-dotenv==1.0.1
 requests==2.32.3
 tmdbv3api==1.9.0
-torch==2.5.1
+torch==2.5.1+cpu
 tqdm==4.67.1
 whispercpp==0.0.17
 youtube-transcript-api==0.6.3
