@@ -1,0 +1,6 @@
+# 텍스트 파일을 LF로 변환
+* text=auto
+
+# 윈도우 실행 파일은 CRLF 유지
+*.bat eol=crlf
+*.cmd eol=crlf

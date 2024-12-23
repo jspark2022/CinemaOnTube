@@ -1,3 +1,13 @@
+# Python byte-compiled files
+__pycache__/
+*.py[cod]
+*$py.class
 
-# 환경 변수 파일
+# Virtual environment
+venv/
+
+# Environment variables
 .env
+
+
+CinemaOnTube/
