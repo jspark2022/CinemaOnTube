@@ -9,5 +9,5 @@ venv/
 # Environment variables
 .env
 
-
+# Exclude CinemaOnTube directory
 CinemaOnTube/

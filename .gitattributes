@@ -4,3 +4,13 @@
 # 윈도우 실행 파일은 CRLF 유지
 *.bat eol=crlf
 *.cmd eol=crlf
+
+# 특정 파일들에 text=auto 설정
+__pycache__
+app.py
+README.md
+requirements.txt
+static
+templates
+utils.py
+venv
