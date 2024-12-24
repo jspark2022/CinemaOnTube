@@ -1,5 +1,5 @@
 # CinemaOnTube
-
+https://youtu.be/9NrHLhjcNoI
 # 🎥 Cinema On Tube
 
 **Cinema On Tube**는 긴 영화 리뷰 영상을 간편하게 요약하고, 영화 정보를 함께 제공하는 웹 애플리케이션입니다.  
