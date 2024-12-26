@@ -538,9 +538,6 @@
 
 #test
 
-
-## utils.py
-
 import os
 import re
 import tempfile
@@ -561,15 +558,13 @@ YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
-# Check for API Keys
 if not YOUTUBE_API_KEY:
-    raise ValueError("환경변수 YOUTUBE_API_KEY가 설정되지 않았습니다.")
+    raise ValueError("환경변수 YOUTUBE_API_KEY가 설정되지 않았습니다. .env 파일 또는 PA Web 환경변수 설정을 확인하세요.")
 if not OPENAI_API_KEY:
-    raise ValueError("환경변수 OPENAI_API_KEY가 설정되지 않았습니다.")
+    raise ValueError("환경변수 OPENAI_API_KEY가 설정되지 않았습니다. .env 파일 또는 PA Web 환경변수 설정을 확인하세요.")
 if not TMDB_API_KEY:
-    raise ValueError("환경변수 TMDB_API_KEY가 설정되지 않았습니다.")
+    raise ValueError("환경변수 TMDB_API_KEY가 설정되지 않았습니다. .env 파일 또는 PA Web 환경변수 설정을 확인하세요.")
 
-# OpenAI API Key 설정
 openai.api_key = OPENAI_API_KEY
 
 # TMDb 설정
@@ -581,7 +576,6 @@ movie = Movie()
 # Whisper 모델 초기화
 whisper_model = whisper.load_model("tiny")
 
-
 def clean_up_temp_files(directory):
     """임시 디렉터리 및 파일 삭제"""
     try:
@@ -591,10 +585,9 @@ def clean_up_temp_files(directory):
     except Exception as e:
         print(f"임시 파일 제거 실패: {e}")
 
-
 def check_transcript_availability(video_id):
     try:
-        YouTubeTranscriptApi.get_transcript(video_id, languages=["ko", "en"])
+        YouTubeTranscriptApi.get_transcript(video_id, languages=['ko', 'en'])
         return True
     except (NoTranscriptFound, TranscriptsDisabled):
         return False
@@ -602,15 +595,13 @@ def check_transcript_availability(video_id):
         print(f"자막 확인 오류: {e}")
         return False
 
-
 def get_transcript(video_id):
     try:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=["ko", "en"])
-        return " ".join([item["text"] for item in transcript])
+        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['ko', 'en'])
+        return " ".join([item['text'] for item in transcript])
     except Exception as e:
         print(f"자막 가져오기 오류: {e}")
         return None
-
 
 def get_video_description(video_id):
     try:
@@ -622,7 +613,6 @@ def get_video_description(video_id):
         print(f"비디오 설명 가져오기 오류: {e}")
         return None
 
-
 def download_audio(youtube_url):
     """특정 YouTube URL에서 오디오를 추출하여 .wav 파일로 저장 후 경로 반환"""
     temp_dir = tempfile.mkdtemp()
@@ -632,7 +622,7 @@ def download_audio(youtube_url):
         "outtmpl": os.path.join(temp_dir, "audio.%(ext)s"),
         "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "wav"}],
         "cachedir": False,
-        "cookiefile": "/home/dlekf12/mysite/cookies.txt",
+        "cookiefile": "/home/dlekf12/mysite/cookies.txt",  # 쿠키 파일 경로
     }
 
     try:
@@ -643,7 +633,6 @@ def download_audio(youtube_url):
         clean_up_temp_files(temp_dir)
         raise RuntimeError(f"오디오 다운로드 오류: {e}")
 
-
 def transcribe_audio(audio_path):
     try:
         result = whisper_model.transcribe(audio_path)
@@ -652,7 +641,6 @@ def transcribe_audio(audio_path):
         raise RuntimeError(f"Whisper 변환 오류: {e}")
     finally:
         clean_up_temp_files(os.path.dirname(audio_path))
-
 
 def summarize_text_in_korean(input_text):
     try:
@@ -675,8 +663,8 @@ def summarize_text_in_korean(input_text):
     except Exception as e:
         raise RuntimeError(f"요약 오류: {e}")
 
-
 def infer_movie_title(description=None, transcript=None, audio_text=None):
+    """영화 제목 추론"""
     texts = [description, transcript, audio_text]
     combined_text = " ".join(filter(None, texts))
     if not combined_text:
@@ -699,8 +687,8 @@ def infer_movie_title(description=None, transcript=None, audio_text=None):
     except Exception as e:
         raise RuntimeError(f"영화 제목 추론 오류: {e}")
 
-
 def get_movie_info(title):
+    """TMDb API를 사용해 영화 정보 가져오기"""
     try:
         search_results = movie.search(title)
         if not search_results:
@@ -708,15 +696,15 @@ def get_movie_info(title):
 
         result = search_results[0]
 
-        poster_path = getattr(result, "poster_path", None)
+        poster_path = getattr(result, 'poster_path', None)
         poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
 
         return {
-            "제목": getattr(result, "title", "제목 없음"),
-            "개요": getattr(result, "overview", "개요 없음"),
-            "개봉일": getattr(result, "release_date", "개봉일 없음"),
-            "평점": getattr(result, "vote_average", "평점 없음"),
-            "포스터 URL": poster_url,
+            "제목": getattr(result, 'title', "제목 없음") if hasattr(result, 'title') else "제목 없음",
+            "개요": getattr(result, 'overview', "개요 없음") if hasattr(result, 'overview') else "개요 없음",
+            "개봉일": getattr(result, 'release_date', "개봉일 없음") if hasattr(result, 'release_date') else "개봉일 없음",
+            "평점": getattr(result, 'vote_average', "평점 없음") if hasattr(result, 'vote_average') else "평점 없음",
+            "포스터 URL": poster_url
         }
     except Exception as e:
         raise RuntimeError(f"TMDb 검색 오류: {e}")
