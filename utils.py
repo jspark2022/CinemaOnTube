@@ -347,6 +347,200 @@
 
 #---------------------------------------------------------------------------------
 
+# import os
+# import re
+# import tempfile
+# from yt_dlp import YoutubeDL
+# import whisper
+# from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound, TranscriptsDisabled
+# from googleapiclient.discovery import build
+# from tmdbv3api import TMDb, Movie
+# from dotenv import load_dotenv
+# import openai
+# import shutil
+
+# # (필요 시) .env 경로를 명시적으로 지정.
+# # .env가 같은 디렉토리에 있다면 아래처럼 "load_dotenv()"만 호출해도 됩니다.
+# # load_dotenv()
+# load_dotenv(dotenv_path="/home/dlekf12/mysite/.env")  # ← 직접 경로 지정 예시
+
+# # API Keys 설정
+# YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
+# OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# TMDB_API_KEY = os.getenv("TMDB_API_KEY")
+
+# # 만약 환경변수가 None이면, 미리 에러를 띄워 디버깅에 도움
+# if not YOUTUBE_API_KEY:
+#     raise ValueError("환경변수 YOUTUBE_API_KEY가 설정되지 않았습니다. .env 파일 또는 PA Web 환경변수 설정을 확인하세요.")
+# if not OPENAI_API_KEY:
+#     raise ValueError("환경변수 OPENAI_API_KEY가 설정되지 않았습니다. .env 파일 또는 PA Web 환경변수 설정을 확인하세요.")
+# if not TMDB_API_KEY:
+#     raise ValueError("환경변수 TMDB_API_KEY가 설정되지 않았습니다. .env 파일 또는 PA Web 환경변수 설정을 확인하세요.")
+
+# # OpenAI API Key 설정
+# openai.api_key = OPENAI_API_KEY
+
+# # TMDb 설정
+# tmdb = TMDb()
+# tmdb.api_key = TMDB_API_KEY
+# tmdb.language = "ko-KR"
+# movie = Movie()
+
+# # Whisper 모델 초기화 (최소 모델 크기 사용)
+# whisper_model = whisper.load_model("tiny")
+
+
+# def clean_up_temp_files(directory):
+#     """임시 디렉터리 및 파일 삭제"""
+#     try:
+#         if os.path.exists(directory):
+#             shutil.rmtree(directory)
+#             print(f"임시 파일 제거 완료: {directory}")
+#     except Exception as e:
+#         print(f"임시 파일 제거 실패: {e}")
+
+
+# def check_transcript_availability(video_id):
+#     try:
+#         YouTubeTranscriptApi.get_transcript(video_id, languages=['ko', 'en'])
+#         return True
+#     except (NoTranscriptFound, TranscriptsDisabled):
+#         return False
+#     except Exception as e:
+#         print(f"자막 확인 오류: {e}")
+#         return False
+
+
+# def get_transcript(video_id):
+#     try:
+#         transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['ko', 'en'])
+#         return " ".join([item['text'] for item in transcript])
+#     except Exception as e:
+#         print(f"자막 가져오기 오류: {e}")
+#         return None
+
+
+# def get_video_description(video_id):
+#     try:
+#         youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
+#         request = youtube.videos().list(part="snippet", id=video_id)
+#         response = request.execute()
+#         return response["items"][0]["snippet"].get("description", "설명 없음")
+#     except Exception as e:
+#         print(f"비디오 설명 가져오기 오류: {e}")
+#         return None
+
+
+# def download_audio(youtube_url):
+#     """특정 YouTube URL에서 오디오를 추출하여 .wav 파일로 저장 후 경로 반환"""
+#     temp_dir = tempfile.mkdtemp()
+
+#     # 쿠키 파일을 지정해서 인증이 필요한 영상도 다운로드 가능하도록 설정
+#     # /home/dlekf12/mysite/ 에 cookies.txt가 업로드되어 있어야 합니다.
+#     ydl_opts = {
+#         "format": "bestaudio/best",
+#         "outtmpl": os.path.join(temp_dir, "audio.%(ext)s"),
+#         "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "wav"}],
+#         "cachedir": False,  # 캐시 비활성화
+#         "cookiefile": "/home/dlekf12/mysite/cookies.txt",  # ← 최신 cookies.txt 경로
+#     }
+
+#     try:
+#         with YoutubeDL(ydl_opts) as ydl:
+#             ydl.download([youtube_url])
+#         return os.path.join(temp_dir, "audio.wav")
+#     except Exception as e:
+#         clean_up_temp_files(temp_dir)
+#         raise RuntimeError(f"오디오 다운로드 오류: {e}")
+
+
+# def transcribe_audio(audio_path):
+#     try:
+#         result = whisper_model.transcribe(audio_path)
+#         return result["text"]
+#     except Exception as e:
+#         raise RuntimeError(f"Whisper 변환 오류: {e}")
+#     finally:
+#         clean_up_temp_files(os.path.dirname(audio_path))
+
+
+# def summarize_text_in_korean(input_text):
+#     try:
+#         system_role = '''
+#         당신은 영화 리뷰 유튜브 콘텐츠를 요약하는 AI 어시스턴트입니다.
+#         오직 제공된 텍스트에 기반하여 요약을 작성하세요. 추가적인 배경 지식이나 외부 정보를 포함하지 마세요.
+#         '''
+#         user_message = f"다음은 유튜브 콘텐츠에서 추출된 텍스트입니다. 이 텍스트를 기반으로 간단하고 명확하게 요약해주세요: {input_text}"
+
+#         response = openai.ChatCompletion.create(
+#             model="gpt-3.5-turbo",
+#             messages=[
+#                 {"role": "system", "content": system_role},
+#                 {"role": "user", "content": user_message}
+#             ],
+#             max_tokens=300,
+#             temperature=0.5,
+#         )
+#         return response["choices"][0]["message"]["content"].strip()
+#     except Exception as e:
+#         raise RuntimeError(f"요약 오류: {e}")
+
+
+# def infer_movie_title(description=None, transcript=None, audio_text=None):
+#     """영화 제목 추론"""
+#     texts = [description, transcript, audio_text]
+#     combined_text = " ".join(filter(None, texts))
+#     if not combined_text:
+#         return None
+
+#     try:
+#         system_role = "다음 텍스트에서 영화 제목을 추론하세요."
+#         user_message = f"텍스트: {combined_text}"
+
+#         response = openai.ChatCompletion.create(
+#             model="gpt-3.5-turbo",
+#             messages=[
+#                 {"role": "system", "content": system_role},
+#                 {"role": "user", "content": user_message}
+#             ],
+#             max_tokens=50,
+#             temperature=0.5,
+#         )
+#         return response["choices"][0]["message"]["content"].strip()
+#     except Exception as e:
+#         raise RuntimeError(f"영화 제목 추론 오류: {e}")
+
+
+# def get_movie_info(title):
+#     """TMDb API를 사용해 영화 정보 가져오기"""
+#     try:
+#         search_results = movie.search(title)
+#         if not search_results:
+#             return {"error": "TMDb 검색 결과가 없습니다."}
+
+#         result = search_results[0]
+
+#         poster_path = getattr(result, 'poster_path', None)
+#         poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
+
+#         return {
+#             "제목": getattr(result, 'title', "제목 없음") if hasattr(result, 'title') else "제목 없음",
+#             "개요": getattr(result, 'overview', "개요 없음") if hasattr(result, 'overview') else "개요 없음",
+#             "개봉일": getattr(result, 'release_date', "개봉일 없음") if hasattr(result, 'release_date') else "개봉일 없음",
+#             "평점": getattr(result, 'vote_average', "평점 없음") if hasattr(result, 'vote_average') else "평점 없음",
+#             "포스터 URL": poster_url
+#         }
+#     except Exception as e:
+#         raise RuntimeError(f"TMDb 검색 오류: {e}")
+
+
+#------------------------------------------------------------------------------
+
+#test
+
+
+## utils.py
+
 import os
 import re
 import tempfile
@@ -359,23 +553,21 @@ from dotenv import load_dotenv
 import openai
 import shutil
 
-# (필요 시) .env 경로를 명시적으로 지정.
-# .env가 같은 디렉토리에 있다면 아래처럼 "load_dotenv()"만 호출해도 됩니다.
-# load_dotenv()
-load_dotenv(dotenv_path="/home/dlekf12/mysite/.env")  # ← 직접 경로 지정 예시
+# Load environment variables
+load_dotenv(dotenv_path="/home/dlekf12/mysite/.env")
 
 # API Keys 설정
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
-# 만약 환경변수가 None이면, 미리 에러를 띄워 디버깅에 도움
+# Check for API Keys
 if not YOUTUBE_API_KEY:
-    raise ValueError("환경변수 YOUTUBE_API_KEY가 설정되지 않았습니다. .env 파일 또는 PA Web 환경변수 설정을 확인하세요.")
+    raise ValueError("환경변수 YOUTUBE_API_KEY가 설정되지 않았습니다.")
 if not OPENAI_API_KEY:
-    raise ValueError("환경변수 OPENAI_API_KEY가 설정되지 않았습니다. .env 파일 또는 PA Web 환경변수 설정을 확인하세요.")
+    raise ValueError("환경변수 OPENAI_API_KEY가 설정되지 않았습니다.")
 if not TMDB_API_KEY:
-    raise ValueError("환경변수 TMDB_API_KEY가 설정되지 않았습니다. .env 파일 또는 PA Web 환경변수 설정을 확인하세요.")
+    raise ValueError("환경변수 TMDB_API_KEY가 설정되지 않았습니다.")
 
 # OpenAI API Key 설정
 openai.api_key = OPENAI_API_KEY
@@ -386,7 +578,7 @@ tmdb.api_key = TMDB_API_KEY
 tmdb.language = "ko-KR"
 movie = Movie()
 
-# Whisper 모델 초기화 (최소 모델 크기 사용)
+# Whisper 모델 초기화
 whisper_model = whisper.load_model("tiny")
 
 
@@ -402,7 +594,7 @@ def clean_up_temp_files(directory):
 
 def check_transcript_availability(video_id):
     try:
-        YouTubeTranscriptApi.get_transcript(video_id, languages=['ko', 'en'])
+        YouTubeTranscriptApi.get_transcript(video_id, languages=["ko", "en"])
         return True
     except (NoTranscriptFound, TranscriptsDisabled):
         return False
@@ -413,8 +605,8 @@ def check_transcript_availability(video_id):
 
 def get_transcript(video_id):
     try:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['ko', 'en'])
-        return " ".join([item['text'] for item in transcript])
+        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=["ko", "en"])
+        return " ".join([item["text"] for item in transcript])
     except Exception as e:
         print(f"자막 가져오기 오류: {e}")
         return None
@@ -435,14 +627,12 @@ def download_audio(youtube_url):
     """특정 YouTube URL에서 오디오를 추출하여 .wav 파일로 저장 후 경로 반환"""
     temp_dir = tempfile.mkdtemp()
 
-    # 쿠키 파일을 지정해서 인증이 필요한 영상도 다운로드 가능하도록 설정
-    # /home/dlekf12/mysite/ 에 cookies.txt가 업로드되어 있어야 합니다.
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": os.path.join(temp_dir, "audio.%(ext)s"),
         "postprocessors": [{"key": "FFmpegExtractAudio", "preferredcodec": "wav"}],
-        "cachedir": False,  # 캐시 비활성화
-        "cookiefile": "/home/dlekf12/mysite/cookies.txt",  # ← 최신 cookies.txt 경로
+        "cachedir": False,
+        "cookiefile": "/home/dlekf12/mysite/cookies.txt",
     }
 
     try:
@@ -487,7 +677,6 @@ def summarize_text_in_korean(input_text):
 
 
 def infer_movie_title(description=None, transcript=None, audio_text=None):
-    """영화 제목 추론"""
     texts = [description, transcript, audio_text]
     combined_text = " ".join(filter(None, texts))
     if not combined_text:
@@ -512,7 +701,6 @@ def infer_movie_title(description=None, transcript=None, audio_text=None):
 
 
 def get_movie_info(title):
-    """TMDb API를 사용해 영화 정보 가져오기"""
     try:
         search_results = movie.search(title)
         if not search_results:
@@ -520,15 +708,15 @@ def get_movie_info(title):
 
         result = search_results[0]
 
-        poster_path = getattr(result, 'poster_path', None)
+        poster_path = getattr(result, "poster_path", None)
         poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else None
 
         return {
-            "제목": getattr(result, 'title', "제목 없음") if hasattr(result, 'title') else "제목 없음",
-            "개요": getattr(result, 'overview', "개요 없음") if hasattr(result, 'overview') else "개요 없음",
-            "개봉일": getattr(result, 'release_date', "개봉일 없음") if hasattr(result, 'release_date') else "개봉일 없음",
-            "평점": getattr(result, 'vote_average', "평점 없음") if hasattr(result, 'vote_average') else "평점 없음",
-            "포스터 URL": poster_url
+            "제목": getattr(result, "title", "제목 없음"),
+            "개요": getattr(result, "overview", "개요 없음"),
+            "개봉일": getattr(result, "release_date", "개봉일 없음"),
+            "평점": getattr(result, "vote_average", "평점 없음"),
+            "포스터 URL": poster_url,
         }
     except Exception as e:
         raise RuntimeError(f"TMDb 검색 오류: {e}")
